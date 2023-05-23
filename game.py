@@ -46,8 +46,8 @@ class Game():
         self.UP_KEY, self.DOWN_KEY, self.START_KEY, self.BACK_KEY = False, False, False, False
         
         #game window
-        self.DISPLAY_W, self.DISPLAY_H, self.BOTTOM_PANEL = 1280, 720, 60
-        self.display = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H  + self.BOTTOM_PANEL))
+        self.DISPLAY_W, self.DISPLAY_H, self.BOTTOM_PANEL = pygame.display.Info().current_w, pygame.display.Info().current_h, 60
+        self.display = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H  + self.BOTTOM_PANEL), pygame.FULLSCREEN|pygame.SCALED)
         
         #fonts and colors
         self.font_name = "Lato"

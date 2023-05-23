@@ -6,13 +6,16 @@ import button
 
 pygame.init()
 
-SCREEN_WIDTH = 1280
+SCREEN_WIDTH = 1080
 SCREEN_HEIGHT = 720
 BOTTOM_PANEL = 60
 
 #creating game window
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + BOTTOM_PANEL))
-pygame.display.set_caption("Cuenetics!")
+info = pygame.display.Info()
+w = info.current_w
+h = info.current_h
+
+screen = pygame.display.set_mode((w, h + BOTTOM_PANEL), pygame.FULLSCREEN|pygame.SCALED)
 
 #creating pymunk space
 space = pymunk.Space()
@@ -26,10 +29,10 @@ clock = pygame.time.Clock()
 FPS = 120
 
 #variables for the game
-diam = 40
+diam = 45
 pocketDiam = 66
 force = 0
-forceMax = 10000 # alimit needs to be set to prevent tunneling
+forceMax = 20000 # alimit needs to be set to prevent tunneling
 forceDir = 1
 lives = 3
 
@@ -40,7 +43,7 @@ isCueBallPotted = False
 isGamePaused = False
 isGameRunning = True
 isBtnClicked = False
-menuState = "main"
+menuState = "pause"
 
 pottedBalls = []
 
@@ -66,14 +69,14 @@ backImage = pygame.image.load("cuenetics/assets/images/buttons/button_back.png")
 
 #POOL GAME
 tableImage = pygame.image.load("cuenetics/assets/images/table.png").convert_alpha()
-tableImage = pygame.transform.scale(tableImage, (1280, 720))
+tableImage = pygame.transform.smoothscale(tableImage, (1280, 720))
 
 cueImage = pygame.image.load("cuenetics/assets/images/cue.png").convert_alpha()
 
 ballImages = []
 for i in range(1, 17):
     ballImage = pygame.image.load("cuenetics/assets/images/ball_" + str(i) + ".png").convert_alpha()
-    ballImage = pygame.transform.scale(ballImage, (40, 40))
+    ballImage = pygame.transform.smoothscale(ballImage, (45, 45))
     ballImages.append(ballImage)
 
 #class for creating the cue
@@ -125,6 +128,9 @@ def createCushion(dimensions):
     shape = pymunk.Poly(body, dimensions)
     shape.elasticity= 0.8
     space.add(body, shape)
+
+def changeForce():
+    pass
 
 #MENU SETUP
 resumeBtn = button.Button(304, 125, resumeImage, 1)
@@ -186,8 +192,21 @@ powerbar.fill(RED)
 
 #MAIN MENU
 
-def mainMenu():
-    pass
+def game_intro():
+
+    intro = True
+
+    while intro:
+        for event in pygame.event.get():
+            print(event)
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+                
+        screen.fill(BG)
+        drawText("WELCOME TO THE GAME", largeFont, WHITE, (SCREEN_HEIGHT + BOTTOM_PANEL)/2, SCREEN_WIDTH/2)
+        pygame.display.update()
+        clock.tick(15)
 
 #GAME LOOP
 
@@ -205,7 +224,7 @@ while isRunning:
     #check if game is paused
     if isGamePaused is True:
         #check menu state
-        if menuState == "main":
+        if menuState == "pause":
             #pause screen buttons drawn
             if resumeBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
@@ -226,7 +245,7 @@ while isRunning:
                 print("Audio Settings")
             if backBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
-                menuState = "main"
+                menuState = "pause"
                 
             
 
@@ -288,7 +307,7 @@ while isRunning:
             if force >= forceMax or force < 0:
                 forceDir *= -1
             #draawing the power bar
-            for bar in range(math.ceil(force /2000)):
+            for bar in range(math.ceil(force /4000)):
                 screen.blit(powerbar, (balls[-1].body.position[0] -30  + (bar*15), 
                                     balls[-1].body.position[1] + 30))
 

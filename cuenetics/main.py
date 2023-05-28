@@ -4,9 +4,12 @@ import pymunk
 import pymunk.pygame_util
 import button
 
+from trajectory import Path
+from pygame import mixer
+from inputBox import InputBox
 pygame.init()
 
-SCREEN_WIDTH = 1080
+SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 BOTTOM_PANEL = 60
 
@@ -15,7 +18,12 @@ info = pygame.display.Info()
 w = info.current_w
 h = info.current_h
 
-screen = pygame.display.set_mode((w, h + BOTTOM_PANEL), pygame.FULLSCREEN|pygame.SCALED)
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + BOTTOM_PANEL), pygame.SCALED)
+icon = pygame.image.load("cuenetics/assets/images/icon.png").convert_alpha()
+pygame.display.set_caption('Cuenetics!')
+pygame.display.set_icon(icon)
+
+
 
 #creating pymunk space
 space = pymunk.Space()
@@ -40,12 +48,16 @@ lives = 3
 isTakingShot = True
 isPoweringUp = False
 isCueBallPotted = False
+isRunning = False
 isGamePaused = False
 isGameRunning = True
 isBtnClicked = False
-menuState = "pause"
+menuState = "main"
 
 pottedBalls = []
+
+#user input variables
+userText = ""
 
 
 #colors
@@ -53,29 +65,55 @@ BG = (50,50,50)
 RED = (255,0,0)
 WHITE = (255, 255, 255)
 
+#textbox colors
+COLOR_INACTIVE = pygame.Color('lightskyblue3')
+COLOR_ACTIVE = pygame.Color('dodgerblue2')
+FONT = pygame.font.Font(None, 32)
+
 #fonts
+base_font = pygame.font.Font(None, 32)
 font = pygame.font.SysFont("Lato",30)
 largeFont = pygame.font.SysFont("Lato",60)
 
+#music
+mixer.music.load("cuenetics/assets/music/bossanovacute.wav")
+mixer.music.play(-1)
+
 #loading images
 
+#MENU BACKGROUNDS
+mainMenu = pygame.image.load("cuenetics/assets/images/menu/menu_1.jpg").convert_alpha()
+settingsMenu = pygame.image.load("cuenetics/assets/images/menu/menu_2.jpg").convert_alpha()
+gameOver = pygame.image.load("cuenetics/assets/images/menu/game_over.jpg").convert_alpha()
+gameOver = pygame.transform.smoothscale(gameOver, (1280, 720))
+
+
 #MENU BUTTONS
-resumeImage = pygame.image.load("cuenetics/assets/images/buttons/button_resume.png").convert_alpha()
-optionsImage = pygame.image.load("cuenetics/assets/images/buttons/button_options.png").convert_alpha()
-quitImage = pygame.image.load("cuenetics/assets/images/buttons/button_quit.png").convert_alpha()
-videoImage = pygame.image.load("cuenetics/assets/images/buttons/button_video.png").convert_alpha()
-audioImage = pygame.image.load("cuenetics/assets/images/buttons/button_audio.png").convert_alpha()
-backImage = pygame.image.load("cuenetics/assets/images/buttons/button_back.png").convert_alpha()
+resumeImage = pygame.image.load("cuenetics/assets/images/buttons/resume_button.png").convert_alpha()
+resumeImage = pygame.transform.smoothscale(resumeImage, (400, 100))
+optionsImage = pygame.image.load("cuenetics/assets/images/buttons/settings_button.png").convert_alpha()
+optionsImage = pygame.transform.smoothscale(optionsImage, (400, 100))
+quitImage = pygame.image.load("cuenetics/assets/images/buttons/quit_button.png").convert_alpha()
+quitImage = pygame.transform.smoothscale(quitImage, (400, 100))
+startImage = pygame.image.load("cuenetics/assets/images/buttons/start_button.png").convert_alpha()
+startImage = pygame.transform.smoothscale(startImage, (400, 100))
+audioImage = pygame.image.load("cuenetics/assets/images/buttons/audio_button.png").convert_alpha()
+audioImage = pygame.transform.smoothscale(audioImage, (400, 100))
+backImage = pygame.image.load("cuenetics/assets/images/buttons/back_button.png").convert_alpha()
+backImage = pygame.transform.smoothscale(backImage, (400, 100))
+freeplayImage = pygame.image.load("cuenetics/assets/images/buttons/freeplay_button.png").convert_alpha()
+freeplayImage = pygame.transform.smoothscale(backImage, (400, 100))
+
 
 #POOL GAME
-tableImage = pygame.image.load("cuenetics/assets/images/table.png").convert_alpha()
+tableImage = pygame.image.load("cuenetics/assets/images/poolgame/table.png").convert_alpha()
 tableImage = pygame.transform.smoothscale(tableImage, (1280, 720))
 
-cueImage = pygame.image.load("cuenetics/assets/images/cue.png").convert_alpha()
+cueImage = pygame.image.load("cuenetics/assets/images/poolgame/cue.png").convert_alpha()
 
 ballImages = []
 for i in range(1, 17):
-    ballImage = pygame.image.load("cuenetics/assets/images/ball_" + str(i) + ".png").convert_alpha()
+    ballImage = pygame.image.load("cuenetics/assets/images/poolgame/ball_" + str(i) + ".png").convert_alpha()
     ballImage = pygame.transform.smoothscale(ballImage, (45, 45))
     ballImages.append(ballImage)
 
@@ -133,12 +171,14 @@ def changeForce():
     pass
 
 #MENU SETUP
-resumeBtn = button.Button(304, 125, resumeImage, 1)
-optionsBtn = button.Button(315, 250, optionsImage, 1)
-quitBtn = button.Button(330, 375, quitImage, 1)
-videoBtn = button.Button(304, 125, videoImage, 1)
-audioBtn = button.Button(315, 250, audioImage, 1)
-backBtn = button.Button(330, 375, backImage, 1)
+resumeBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 125, resumeImage, 1)
+editBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 250, resumeImage, 1)
+optionsBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, optionsImage, 1)
+quitBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 500, quitImage, 1)
+startBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 125, startImage, 1)
+freeplayBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, freeplayImage, 1)
+audioBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 250, audioImage, 1)
+backBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, backImage, 1)
 
 #GAME SETUP
 
@@ -189,28 +229,46 @@ cueStick = Cue(balls[-1].body.position)
 powerbar = pygame.Surface((10, 20))
 powerbar.fill(RED)
 
+#ball path setup
+ballPath = Path(balls[-1].body.position)
+
+
+input_box1 = InputBox(1500, 100, 200, 32, font, COLOR_INACTIVE)
+input_box2 = InputBox(1500, 300, 200, 32, font, COLOR_ACTIVE)
+input_boxes = [input_box1, input_box2]
 
 #MAIN MENU
 
-def game_intro():
-
-    intro = True
-
-    while intro:
-        for event in pygame.event.get():
-            print(event)
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+intro = True
+print(menuState)
+while intro:
+    if menuState == "main":
+        #pause screen buttons drawn
+        if startBtn.draw(screen) and not isBtnClicked:
+            isBtnClicked = True
+            isRunning = True
+            intro = False
+        if freeplayBtn.draw(screen) and not isBtnClicked:
+            isBtnClicked = True
+            pass
                 
-        screen.fill(BG)
-        drawText("WELCOME TO THE GAME", largeFont, WHITE, (SCREEN_HEIGHT + BOTTOM_PANEL)/2, SCREEN_WIDTH/2)
-        pygame.display.update()
-        clock.tick(15)
+        if optionsBtn.draw(screen) and not isBtnClicked:
+            isBtnClicked = True
+            menuState = "options"
+                
+        if quitBtn.draw(screen) and not isBtnClicked:
+            isRunning = False
+        
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONUP:
+                isBtnClicked = False
+            if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+    pygame.display.update()
+    clock.tick(15)
 
 #GAME LOOP
-
-isRunning = True
 
 while isRunning:
 
@@ -237,11 +295,13 @@ while isRunning:
         #check if options menu is open
         if menuState == "options":
             #options menu is drawn
-            if videoBtn.draw(screen) and not isBtnClicked:
+            if startBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
-                print("Video Settings")
+                menuState = "game"
+                print("Game Settings")
             if audioBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
+                menuState = "audio"
                 print("Audio Settings")
             if backBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
@@ -251,6 +311,13 @@ while isRunning:
 
     else:
         
+        for box in input_boxes:
+            box.update()
+        
+        for box in input_boxes:
+            box.draw(screen)
+
+
         #drawing the pool table
         screen.blit(tableImage, (0,0))
 
@@ -294,12 +361,21 @@ while isRunning:
             mousePos = pygame.mouse.get_pos()
 
             cueStick.rect.center = balls[-1].body.position #making sure the cue stick follows the cue ball
+            ballPath.rect.center = balls[-1].body.position #making sure the cue stick follows the cue ball
 
             xDist = balls[-1].body.position[0] - mousePos[0]
             yDist = -(balls[-1].body.position[1] - mousePos[1]) #invert it back bc pygame y coordinates are flipped
             cueAngle = math.degrees(math.atan2(yDist, xDist))
             cueStick.update(cueAngle)
             cueStick.draw(screen)
+
+            x2Dist = -(balls[-1].body.position[0] - mousePos[0])
+            y2Dist = (balls[-1].body.position[1] - mousePos[1]) #invert it back bc pygame y coordinates are flipped
+            cueAngle2 = math.degrees(math.atan2(y2Dist, x2Dist))
+            ballPath.update(cueAngle2)
+            ballPath.draw(screen)
+
+
         
         #powering up cue stick
         if isPoweringUp is True and isGameRunning is True:
@@ -310,6 +386,7 @@ while isRunning:
             for bar in range(math.ceil(force /4000)):
                 screen.blit(powerbar, (balls[-1].body.position[0] -30  + (bar*15), 
                                     balls[-1].body.position[1] + 30))
+            
 
         elif isPoweringUp is False and isTakingShot is True:
             xImpulse = math.cos(math.radians(cueAngle))
@@ -328,6 +405,7 @@ while isRunning:
 
         #checking for game over
         if lives <= 0:
+            screen.blit(gameOver, (0,0))
             drawText("GAME OVER", largeFont, WHITE, SCREEN_WIDTH/2 - 160, SCREEN_HEIGHT /2 -100 )
             isGameRunning = False
         
@@ -340,7 +418,12 @@ while isRunning:
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                isGamePaused = True
+                for box in input_boxes:
+                    if box.active == True:
+                        continue
+                    else:
+                        menuState = "pause"
+                        isGamePaused = True
         if event.type == pygame.MOUSEBUTTONDOWN and isTakingShot is True:
             isPoweringUp = True
         if event.type == pygame.MOUSEBUTTONUP:
@@ -349,8 +432,9 @@ while isRunning:
             isPoweringUp = False
         if event.type == pygame.QUIT:
             isRunning = False
+        for box in input_boxes:
+            box.handle_event(event, font, COLOR_ACTIVE, COLOR_INACTIVE)
         
-    # space.debug_draw(drawOptions)
     pygame.display.update()
 
 pygame.quit

@@ -11,14 +11,14 @@ pygame.init()
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
-BOTTOM_PANEL = 60
+BOTTOM_PANEL = 300
 
 #creating game window
 info = pygame.display.Info()
 w = info.current_w
 h = info.current_h
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + BOTTOM_PANEL), pygame.SCALED)
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + BOTTOM_PANEL),pygame.FULLSCREEN|pygame.SCALED)
 icon = pygame.image.load("cuenetics/assets/images/icon.png").convert_alpha()
 pygame.display.set_caption('Cuenetics!')
 pygame.display.set_icon(icon)
@@ -43,6 +43,8 @@ force = 0
 forceMax = 20000 # alimit needs to be set to prevent tunneling
 forceDir = 1
 lives = 3
+cueBallX = 888
+cueBallY = SCREEN_HEIGHT/2
 
 #states
 isTakingShot = True
@@ -102,7 +104,7 @@ audioImage = pygame.transform.smoothscale(audioImage, (400, 100))
 backImage = pygame.image.load("cuenetics/assets/images/buttons/back_button.png").convert_alpha()
 backImage = pygame.transform.smoothscale(backImage, (400, 100))
 freeplayImage = pygame.image.load("cuenetics/assets/images/buttons/freeplay_button.png").convert_alpha()
-freeplayImage = pygame.transform.smoothscale(backImage, (400, 100))
+freeplayImage = pygame.transform.smoothscale(freeplayImage, (400, 100))
 
 
 #POOL GAME
@@ -114,7 +116,7 @@ cueImage = pygame.image.load("cuenetics/assets/images/poolgame/cue.png").convert
 ballImages = []
 for i in range(1, 17):
     ballImage = pygame.image.load("cuenetics/assets/images/poolgame/ball_" + str(i) + ".png").convert_alpha()
-    ballImage = pygame.transform.smoothscale(ballImage, (45, 45))
+    ballImage = pygame.transform.smoothscale(ballImage, (diam, diam))
     ballImages.append(ballImage)
 
 #class for creating the cue
@@ -176,7 +178,7 @@ editBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 250, resum
 optionsBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, optionsImage, 1)
 quitBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 500, quitImage, 1)
 startBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 125, startImage, 1)
-freeplayBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, freeplayImage, 1)
+freeplayBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 250, freeplayImage, 1)
 audioBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 250, audioImage, 1)
 backBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, backImage, 1)
 
@@ -195,7 +197,7 @@ for column in range(5):
     rows -= 1
 
 #cue ball
-pos = (888, SCREEN_HEIGHT/2)
+pos = (cueBallX, cueBallY)
 cueBall = createBall(diam/2, pos)
 balls.append(cueBall)
 
@@ -233,9 +235,9 @@ powerbar.fill(RED)
 ballPath = Path(balls[-1].body.position)
 
 
-input_box1 = InputBox(1500, 100, 200, 32, font, COLOR_INACTIVE)
-input_box2 = InputBox(1500, 300, 200, 32, font, COLOR_ACTIVE)
-input_boxes = [input_box1, input_box2]
+force_ip_box = InputBox(SCREEN_WIDTH - 900, SCREEN_HEIGHT + 100, 200, 32, font, COLOR_INACTIVE)
+diam_ip_box = InputBox(SCREEN_WIDTH - 600, SCREEN_HEIGHT + 100, 200, 32, font, COLOR_ACTIVE)
+input_boxes = [force_ip_box, diam_ip_box]
 
 #MAIN MENU
 
@@ -310,13 +312,6 @@ while isRunning:
             
 
     else:
-        
-        for box in input_boxes:
-            box.update()
-        
-        for box in input_boxes:
-            box.draw(screen)
-
 
         #drawing the pool table
         screen.blit(tableImage, (0,0))
@@ -343,7 +338,7 @@ while isRunning:
         #drawing the pool balls
         for i, ball in enumerate(balls):
             screen.blit(ballImages[i], (ball.body.position[0] - ball.radius, ball.body.position[1] - ball.radius))
-
+        
         #drawing the cue stick
         #checking if all pool balls have stopped moving
         isTakingShot = True
@@ -355,13 +350,13 @@ while isRunning:
         if isTakingShot is True and isGameRunning is True:
             if isCueBallPotted is True:
                 #reposition cue ball
-                balls[-1].body.position = (888, SCREEN_HEIGHT/2)
+                balls[-1].body.position = (cueBallX, cueBallY)
                 isCueBallPotted = False
 
             mousePos = pygame.mouse.get_pos()
 
             cueStick.rect.center = balls[-1].body.position #making sure the cue stick follows the cue ball
-            ballPath.rect.center = balls[-1].body.position #making sure the cue stick follows the cue ball
+            ballPath.rect.center = balls[-1].body.position #making sure aiming path follows the cue ball
 
             xDist = balls[-1].body.position[0] - mousePos[0]
             yDist = -(balls[-1].body.position[1] - mousePos[1]) #invert it back bc pygame y coordinates are flipped
@@ -370,7 +365,7 @@ while isRunning:
             cueStick.draw(screen)
 
             x2Dist = -(balls[-1].body.position[0] - mousePos[0])
-            y2Dist = (balls[-1].body.position[1] - mousePos[1]) #invert it back bc pygame y coordinates are flipped
+            y2Dist = (balls[-1].body.position[1] - mousePos[1]) #not inverted back because we want the aim path to show up in front
             cueAngle2 = math.degrees(math.atan2(y2Dist, x2Dist))
             ballPath.update(cueAngle2)
             ballPath.draw(screen)
@@ -398,6 +393,15 @@ while isRunning:
         #drawing the bottom section
         pygame.draw.rect(screen, BG, (0, SCREEN_HEIGHT, SCREEN_WIDTH, BOTTOM_PANEL))
         drawText("LIVES: " + str(lives), largeFont, WHITE, SCREEN_WIDTH - 200, SCREEN_HEIGHT + 10)
+
+        # forceMax = int(input_boxes[0].get_text())
+        # diam = int(input_boxes[1].get_text())    
+        
+        for box in input_boxes:
+            box.update()
+        
+        for box in input_boxes:
+            box.draw(screen)
         
         #drawing the potted balls in the bottom section
         for i, ball in enumerate(pottedBalls):
@@ -434,6 +438,7 @@ while isRunning:
             isRunning = False
         for box in input_boxes:
             box.handle_event(event, font, COLOR_ACTIVE, COLOR_INACTIVE)
+            
         
     pygame.display.update()
 

@@ -394,8 +394,8 @@ while isRunning:
         pygame.draw.rect(screen, BG, (0, SCREEN_HEIGHT, SCREEN_WIDTH, BOTTOM_PANEL))
         drawText("LIVES: " + str(lives), largeFont, WHITE, SCREEN_WIDTH - 200, SCREEN_HEIGHT + 10)
 
-        # forceMax = int(input_boxes[0].get_text())
-        # diam = int(input_boxes[1].get_text())    
+        # forceMax = input_boxes[0].get_text())
+        # diam = input_boxes[1].get_text())    
         
         for box in input_boxes:
             box.update()
@@ -424,7 +424,8 @@ while isRunning:
             if event.key == pygame.K_SPACE:
                 for box in input_boxes:
                     if box.active == True:
-                        continue
+                        forceMax = int(input_boxes[0].get_text())
+                        diam = int(input_boxes[1].get_text())    
                     else:
                         menuState = "pause"
                         isGamePaused = True

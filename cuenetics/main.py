@@ -1,19 +1,20 @@
+# IMPORTING THE MODULES
 import math
 import pygame
 import pymunk
 import pymunk.pygame_util
 import button
 
-from trajectory import Path
 from pygame import mixer
 from inputBox import InputBox
 pygame.init()
 
+#SETTING SCREEN HEIGHT
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 BOTTOM_PANEL = 300
 
-#creating game window
+#CREATING THE GAME WINDOW
 info = pygame.display.Info()
 w = info.current_w
 h = info.current_h
@@ -23,7 +24,8 @@ icon = pygame.image.load("cuenetics/assets/images/icon.png").convert_alpha()
 pygame.display.set_caption('Cuenetics!')
 pygame.display.set_icon(icon)
 
-
+#####################################################################################################################
+#PYMUNK SETUP
 
 #creating pymunk space
 space = pymunk.Space()
@@ -31,6 +33,9 @@ space = pymunk.Space()
 #adding friction
 staticBody = space.static_body
 drawOptions = pymunk.pygame_util.DrawOptions(screen)
+
+#####################################################################################################################
+#GAME VARIABLES
 
 #clock
 clock = pygame.time.Clock()
@@ -42,6 +47,7 @@ rad = diam/2
 pocketDiam = 66
 mass = 5
 elasticity = 1
+maxFrictionForce = 1000
 force = 0
 forceMax = 20000 # alimit needs to be set to prevent tunneling
 forceDir = 1
@@ -50,6 +56,8 @@ cueBallX = 888
 cueBallY = SCREEN_HEIGHT/2
 
 #states
+intro = True
+freePlay = False
 isTakingShot = True
 isPoweringUp = False
 isCueBallPotted = False
@@ -64,7 +72,6 @@ pottedBalls = []
 #user input variables
 userText = ""
 
-
 #colors
 BG = (27,64,121)
 RED = (249,112,104)
@@ -75,16 +82,28 @@ COLOR_INACTIVE = pygame.Color('lightskyblue3')
 COLOR_ACTIVE = pygame.Color('dodgerblue2')
 FONT = pygame.font.Font(None, 32)
 
-#fonts
-base_font = pygame.font.Font("cuenetics/assets/Harmattan-Medium.ttf", 32)
-font = pygame.font.Font("cuenetics/assets/Harmattan-Medium.ttf",30)
-largeFont = pygame.font.Font("cuenetics/assets/Harmattan-Medium.ttf",60)
+# fonts
+font = pygame.font.Font("cuenetics/assets/BalsamiqSans-Regular.ttf",24)
+largeFont = pygame.font.Font("cuenetics/assets/BalsamiqSans-Regular.ttf",80)
 
-#music
-# mixer.music.load("cuenetics/assets/music/bossanovacute.wav")
-# mixer.music.play(-1)
+#####################################################################################################################
+# MUSIC SETUP
+playlist = list()
+playlist.append("cuenetics/assets/music/bossanovacute.wav")
+playlist.append("cuenetics/assets/music/jazzyabstract.mp3")
+playlist.append("cuenetics/assets/music/weeknds.mp3")
 
-#loading images
+pygame.mixer.music.load ( playlist.pop() ) #get first track from the playlist
+pygame.mixer.music.queue ( playlist.pop() ) #queue second song
+pygame.mixer.music.set_endevent ( pygame.USEREVENT ) #setup end track event   
+pygame.mixer.music.play() 
+
+mixer.music.load("cuenetics/assets/music/bossanovacute.wav")
+mixer.music.play(-1)
+
+
+#####################################################################################################################
+#LOADING IMAGES
 
 #MENU BACKGROUNDS
 mainMenu = pygame.image.load("cuenetics/assets/images/menu/menu_1.jpg").convert_alpha()
@@ -94,8 +113,6 @@ gameOver = pygame.transform.smoothscale(gameOver, (1280, 720))
 
 #TITLE IMAGE
 titleImage = pygame.image.load("cuenetics/assets/images/cuenetics.png").convert_alpha()
-
-
 
 #MENU BUTTONS
 resumeImage = pygame.image.load("cuenetics/assets/images/buttons/resume_button.png").convert_alpha()
@@ -114,14 +131,30 @@ backImage = pygame.image.load("cuenetics/assets/images/buttons/back_button.png")
 backImage = pygame.transform.smoothscale(backImage, (400, 100))
 freeplayImage = pygame.image.load("cuenetics/assets/images/buttons/freeplay_button.png").convert_alpha()
 freeplayImage = pygame.transform.smoothscale(freeplayImage, (400, 100))
+creditsImage = pygame.image.load("cuenetics/assets/images/buttons/credits_button.png").convert_alpha()
+creditsImage = pygame.transform.smoothscale(creditsImage, (400, 100))
+
+#CUE BUTTONS
+classicImage = pygame.image.load("cuenetics/assets/images/buttons/classic_button.png").convert_alpha()
+classicImage = pygame.transform.smoothscale(classicImage, (175, 50))
+festiveImage = pygame.image.load("cuenetics/assets/images/buttons/festive_button.png").convert_alpha()
+festiveImage = pygame.transform.smoothscale(festiveImage, (175, 50))
+spaceImage = pygame.image.load("cuenetics/assets/images/buttons/space_button.png").convert_alpha()
+spaceImage = pygame.transform.smoothscale(spaceImage, (175, 50))
+barberImage = pygame.image.load("cuenetics/assets/images/buttons/barber_button.png").convert_alpha()
+barberImage = pygame.transform.smoothscale(barberImage, (175, 50))
+sharpImage = pygame.image.load("cuenetics/assets/images/buttons/sharp_button.png").convert_alpha()
+sharpImage = pygame.transform.smoothscale(sharpImage, (175, 50))
+pointyImage = pygame.image.load("cuenetics/assets/images/buttons/pointy_button.png").convert_alpha()
+pointyImage = pygame.transform.smoothscale(pointyImage, (175, 50))
 
 
 #POOL GAME
 tableImage = pygame.image.load("cuenetics/assets/images/poolgame/table.png").convert_alpha()
 tableImage = pygame.transform.smoothscale(tableImage, (1280, 720))
 
-cueImage = pygame.image.load("cuenetics/assets/images/cues/cue5.png").convert_alpha()
-cueImage = pygame.transform.smoothscale(cueImage, (2000, 80))
+pathImage = pygame.image.load("cuenetics/assets/images/poolgame/dashed.png").convert_alpha()
+
 cue1Image = pygame.image.load("cuenetics/assets/images/cues/cue1.png").convert_alpha()
 cue1Image = pygame.transform.smoothscale(cue1Image, (2000, 80))
 cue2Image = pygame.image.load("cuenetics/assets/images/cues/cue2.png").convert_alpha()
@@ -141,15 +174,21 @@ for i in range(1, 17):
     ballImage = pygame.transform.smoothscale(ballImage, (diam, diam))
     ballImages.append(ballImage)
 
+#####################################################################################################################
+#CLASSES AND FUNCTIONS
+
 #class for creating the cue
 #cue is only a visual cue, not a pymunk object
 class Cue():
-    def __init__(self, pos):
-        self.originalImage = cueImage # this is the original form/image of the cue itself
+    def __init__(self, pos, image):
+        self.originalImage = image # this is the original form/image of the cue itself
         self.angle = 0
         self.image = pygame.transform.rotate(self.originalImage, self.angle) #this is the image that will be rotating
         self.rect = self.image.get_rect()
         self.rect.center = pos
+    
+    def setImage(self, newImage):
+        self.originalImage = newImage
 
     def update(self, angle):
         self.angle = angle
@@ -160,9 +199,10 @@ class Cue():
                      (self.rect.centerx - self.image.get_width()/2,
                       self.rect.centery - self.image.get_height()/2
                       ))
-        
+
+# class for creating a ball object    
 class Ball():
-    def __init__(self, pos, rad, mass, elasticity, max_force = 1000):
+    def __init__(self, pos, rad, mass, elasticity, maxFrictionForce):
         self.body = pymunk.Body()
         self.body.position = pos
         self.rad = rad
@@ -173,7 +213,7 @@ class Ball():
         #adding friction to the ball using pivot joint
         self.pivot = pymunk.PivotJoint(staticBody, self.body, (0,0), (0,0))
         self.pivot.max_bias = 0 #disable joint correction
-        self.pivot.max_force = max_force #emulating linear friction, higher value, higher friction
+        self.pivot.max_force = maxFrictionForce #emulating linear friction, higher value, higher friction
     
     def addBall(self, space):
         space.add(self.body, self.shape, self.pivot)
@@ -191,14 +231,13 @@ class Ball():
     def setMaxForce(self, max_force):
         self.pivot.max_force = max_force
 
-
-
         
 #function to output text on screen
 def drawText(text, font, textCol, x, y):
     img = font.render(text, True, textCol)
     screen.blit(img, (x, y))
-        
+
+#function to create the cushions according to the dimensions
 def createCushion(dimensions):
     body = pymunk.Body(body_type=pymunk.Body.STATIC)
     body.position = ((0,0))
@@ -206,8 +245,8 @@ def createCushion(dimensions):
     shape.elasticity= 0.8
     space.add(body, shape)
 
-def changeForce():
-    pass
+
+#####################################################################################################################
 
 #MENU SETUP
 resumeBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2),250, resumeImage, 1)
@@ -216,10 +255,20 @@ optionsBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 625, op
 quitBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 750, quitImage, 1)
 startBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, startImage, 1)
 freeplayBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 500, freeplayImage, 1)
+creditsBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 500, creditsImage, 1)
 mainMenuBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 375, mainMenuImage, 1)
 audioBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 250, audioImage, 1)
 backBtn = button.Button((SCREEN_WIDTH/2)-(resumeImage.get_width()/2), 500, backImage, 1)
 
+#CUE SELECTION BUTTON
+classicBtn = button.Button(75, SCREEN_HEIGHT + 210, classicImage, 1)
+festiveBtn = button.Button(260, SCREEN_HEIGHT + 210, festiveImage, 1)
+spaceBtn = button.Button(445, SCREEN_HEIGHT + 210, spaceImage, 1)
+barberBtn = button.Button(630, SCREEN_HEIGHT + 210, barberImage, 1)
+sharpBtn = button.Button(815, SCREEN_HEIGHT + 210, sharpImage, 1)
+pointyBtn = button.Button(1000, SCREEN_HEIGHT + 210, pointyImage, 1)
+
+#####################################################################################################################
 #GAME SETUP
 
 #pool ball setup
@@ -227,17 +276,17 @@ balls = []
 rows = 5
 
 #creating balls
-for column in range(5):
+for column in range(rows):
     for row in range (rows):
         pos = (250 + (column * (diam + 1)), 270 + (row * (diam + 1)) + (column * diam/2)) #x coordinate, y coordinate
-        newBall = Ball(pos, rad, mass, elasticity)
+        newBall = Ball(pos, rad, mass, elasticity, maxFrictionForce)
         newBall.addBall(space)
         balls.append(newBall)
     rows -= 1
 
 #cue ball
 pos = (cueBallX, cueBallY)
-cueBall = Ball(pos, rad, mass, elasticity)
+cueBall = Ball(pos, rad, mass, elasticity, maxFrictionForce)
 cueBall.addBall(space)
 balls.append(cueBall)
  
@@ -265,28 +314,29 @@ for c in cushions:
     createCushion(c)
 
 #cue stick setup
-cueStick = Cue(balls[-1].body.position)
+
+cueStick = Cue(balls[-1].body.position, cue1Image)
 
 #power bar setup and creation
 powerbar = pygame.Surface((10, 20))
 powerbar.fill(RED)
 
 #ball path setup
-ballPath = Path(balls[-1].body.position)
+ballPath = Cue(balls[-1].body.position, pathImage)
+
+#input box setup
+force_ip_box = InputBox(75, SCREEN_HEIGHT + 135, 50,32, font, COLOR_INACTIVE)
+diam_ip_box = InputBox(300, SCREEN_HEIGHT + 135, 50, 32, font, COLOR_INACTIVE)
+mass_ip_box = InputBox(525, SCREEN_HEIGHT + 135, 50, 32, font, COLOR_INACTIVE)
+elasticity_ip_box = InputBox(750, SCREEN_HEIGHT + 135, 50, 32, font, COLOR_INACTIVE)
+friction_ip_box = InputBox(975, SCREEN_HEIGHT + 135, 50, 32, font, COLOR_INACTIVE)
+inputBoxes = [force_ip_box, diam_ip_box, mass_ip_box, elasticity_ip_box, friction_ip_box]
 
 
-force_ip_box = InputBox(SCREEN_WIDTH/12, SCREEN_HEIGHT + 100, 50,32, font, COLOR_INACTIVE)
-diam_ip_box = InputBox(SCREEN_WIDTH/3, SCREEN_HEIGHT + 100, 50, 32, font, COLOR_INACTIVE)
-mass_ip_box = InputBox(SCREEN_WIDTH/2, SCREEN_HEIGHT + 100, 50, 32, font, COLOR_INACTIVE)
-elasticity_ip_box = InputBox(SCREEN_WIDTH-200, SCREEN_HEIGHT + 100, 50, 32, font, COLOR_INACTIVE)
-inputBoxes = [force_ip_box, diam_ip_box, mass_ip_box, elasticity_ip_box]
+#####################################################################################################################
 
-#MAIN MENU
+# MAIN MENU
 
-intro = True
-freePlay = False
-
-print(menuState)
 while intro:
     screen.fill(BG)
 
@@ -326,11 +376,12 @@ while intro:
     pygame.display.update()
     clock.tick(15)
 
+#####################################################################################################################
+
 #GAME LOOP
 
 while isRunning:
 
-    
     clock.tick(FPS)
     space.step(1/FPS)
 
@@ -350,6 +401,8 @@ while isRunning:
                 intro = True
                 menuState = "main"
                 isRunning = False
+            if creditsBtn.draw(screen) and not isBtnClicked:
+                isBtnClicked = True
             if optionsBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
                 menuState = "options"
@@ -370,8 +423,7 @@ while isRunning:
                 isBtnClicked = True
                 menuState = "pause"
                 
-            
-
+    #if it's not the main menu, then show this    
     else:
 
         #drawing the pool table
@@ -383,6 +435,7 @@ while isRunning:
                 xBallDist = abs(ball.body.position[0] - pocket[0])
                 yBallDist = abs(ball.body.position[1] - pocket[1])
                 ballDist = math.sqrt((xBallDist **2) + (yBallDist**2))
+
                 if ballDist <= pocketDiam /2:
                     #check if the potted ball was the cue ball
                     if i == len(balls) - 1:
@@ -436,7 +489,6 @@ while isRunning:
             ballPath.draw(screen)
 
 
-        
         #powering up cue stick
         if isPoweringUp is True and isGameRunning is True:
             force += 100 * forceDir
@@ -456,31 +508,100 @@ while isRunning:
             forceDir = 1 #resetting the force direction to not get stuck in a loop
         
         #drawing the bottom section
-        
-
+        #if its classic mode, set the lives
         if freePlay == False:
             pygame.draw.rect(screen, BG, (0, SCREEN_HEIGHT, SCREEN_WIDTH, BOTTOM_PANEL))
-            drawText("LIVES: " + str(lives), largeFont, WHITE, SCREEN_WIDTH - 200, SCREEN_HEIGHT + 10)
-            
+            drawText("LIVES: " + str(lives), largeFont, WHITE, SCREEN_WIDTH - 225, SCREEN_HEIGHT)
+        
+        #if its free play, no lives
         else:
             pygame.draw.rect(screen, BG, (0, SCREEN_HEIGHT, SCREEN_WIDTH, BOTTOM_PANEL))
-            
+
+            #INPUT CAPTIONS
+            drawText("Max Force: " + str(forceMax), font, WHITE, 75, SCREEN_HEIGHT + 85)
+            drawText("Ball Diameter: " + str(diam), font, WHITE, 300, SCREEN_HEIGHT + 85)
+            drawText("Ball Mass: " + str(mass), font, WHITE, 525, SCREEN_HEIGHT + 85)
+            drawText("Ball Elasticity: " + str(elasticity), font, WHITE, 750, SCREEN_HEIGHT + 85)
+            drawText("Ball Friction: " + str(maxFrictionForce), font, WHITE, 975, SCREEN_HEIGHT + 85)
+
+            # CUE SELECTION
+            if classicBtn.draw(screen) and not isBtnClicked:
+                isBtnClicked = True
+                cueStick.setImage(cue1Image)
+                
+            if festiveBtn.draw(screen) and not isBtnClicked:
+                isBtnClicked = True
+                cueStick.setImage(cue2Image)
+                
+            if spaceBtn.draw(screen) and not isBtnClicked:
+                isBtnClicked = True
+                cueStick.setImage(cue3Image)
+                
+            if barberBtn.draw(screen) and not isBtnClicked:
+                isBtnClicked = True
+                cueStick.setImage(cue4Image)
+
+            if sharpBtn.draw(screen) and not isBtnClicked:
+                isBtnClicked = True
+                cueStick.setImage(cue5Image)
+
+            if pointyBtn.draw(screen) and not isBtnClicked:
+                isBtnClicked = True
+                cueStick.setImage(cue6Image)
+
+            #CHECKING INPUT BOXES FOR USER INPUT
             for box in inputBoxes:
                 box.update()
                 box.draw(screen)
                 if box.active:
                     if box.get_text() == "" or box.get_text() == ' ':
                         pass
-                    elif float(box.get_text()) and box == inputBoxes[0]:
-                        forceMax = float(inputBoxes[0].get_text())
-                    elif float(box.get_text()) and box == inputBoxes[1]:
-                        diam = float(inputBoxes[1].get_text())
-                    elif float(box.get_text()) and box == inputBoxes[2]:
-                        mass = float(inputBoxes[2].get_text())
+                    elif box.get_text() and box == inputBoxes[0]:
+                        while box.get_text():
+                            try:
+                                num = float(box.get_text())
+                            except ValueError:
+                                break
+                            forceMax = float(inputBoxes[0].get_text())
+                            break
+
+                    elif box.get_text() and box == inputBoxes[1]:
+                        while box.get_text():
+                            try:
+                                num = float(box.get_text())
+                            except ValueError:
+                                break
+                            diam = float(inputBoxes[1].get_text())
+                            break
+                        
+                    elif box.get_text() and box == inputBoxes[2]:
+                        while box.get_text():
+                            try:
+                                num = float(box.get_text())
+                            except ValueError:
+                                break
+                            mass = float(inputBoxes[2].get_text())
+                            break
+                        
                     elif box.get_text() and box == inputBoxes[3]:
-                        elasticity = float(inputBoxes[3].get_text())
+                        while box.get_text():
+                            try:
+                                num = float(box.get_text())
+                            except ValueError:
+                                break
+                            elasticity = float(inputBoxes[3].get_text())
+                            break
+                        
+                    elif box.get_text() and box == inputBoxes[4]:
+                        while box.get_text():
+                            try:
+                                num = float(box.get_text())
+                            except ValueError:
+                                break
+                            maxFrictionForce = float(inputBoxes[4].get_text())
+                            break
                     else:
-                        print="Please enter valid number."
+                        pass
 
         
         #drawing the potted balls in the bottom section
@@ -495,11 +616,15 @@ while isRunning:
         
         #checking for win (all balls potted)
         if len(balls) == 1:
-            drawText("YOU ARE WIN :D", largeFont, WHITE, SCREEN_WIDTH/2 - 160, SCREEN_HEIGHT /2 -100 )
+            drawText("YOU WIN :D", largeFont, WHITE, SCREEN_WIDTH/2 - 160, SCREEN_HEIGHT /2 -100 )
             isGameRunning = False
 
     #event handling
     for event in pygame.event.get():
+        if event.type == pygame.USEREVENT:  
+            if len ( playlist ) > 0:     
+                pygame.mixer.music.queue ( playlist.pop() )
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 for box in inputBoxes:
@@ -518,11 +643,7 @@ while isRunning:
             isRunning = False
         for box in inputBoxes:
             box.handle_event(event, font, COLOR_ACTIVE, COLOR_INACTIVE)
-        print(forceMax)    
-        print(float(elasticity))
-        print(mass)      
-        print(diam)
-        
+    
     pygame.display.update()
 
 pygame.quit

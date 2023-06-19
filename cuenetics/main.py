@@ -39,7 +39,7 @@ drawOptions = pymunk.pygame_util.DrawOptions(screen)
 
 #clock
 clock = pygame.time.Clock()
-FPS = 120
+FPS = 240
 
 #variables for the game
 diam = 45
@@ -83,15 +83,16 @@ COLOR_ACTIVE = pygame.Color('dodgerblue2')
 FONT = pygame.font.Font(None, 32)
 
 # fonts
-font = pygame.font.Font("cuenetics/assets/BalsamiqSans-Regular.ttf",24)
-largeFont = pygame.font.Font("cuenetics/assets/BalsamiqSans-Regular.ttf",80)
+font = pygame.font.Font("cuenetics/assets/BalsamiqSans-Regular.ttf",22)
+largeFont = pygame.font.Font("cuenetics/assets/BalsamiqSans-Regular.ttf",50)
 
 #####################################################################################################################
 # MUSIC SETUP
 playlist = list()
-playlist.append("cuenetics/assets/music/bossanovacute.wav")
+
 playlist.append("cuenetics/assets/music/jazzyabstract.mp3")
 playlist.append("cuenetics/assets/music/weeknds.mp3")
+playlist.append("cuenetics/assets/music/bossanovacute.wav")
 
 pygame.mixer.music.load ( playlist.pop() ) #get first track from the playlist
 pygame.mixer.music.queue ( playlist.pop() ) #queue second song
@@ -398,9 +399,7 @@ while isRunning:
                 isGamePaused = False
             if mainMenuBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
-                intro = True
-                menuState = "main"
-                isRunning = False
+                freeplay = False
             if creditsBtn.draw(screen) and not isBtnClicked:
                 isBtnClicked = True
             if optionsBtn.draw(screen) and not isBtnClicked:
@@ -431,6 +430,7 @@ while isRunning:
 
         #checking if any balls have been potted (went into the pockets)
         for i, ball in enumerate(balls):
+            
             for pocket in pockets:
                 xBallDist = abs(ball.body.position[0] - pocket[0])
                 yBallDist = abs(ball.body.position[1] - pocket[1])
@@ -461,6 +461,7 @@ while isRunning:
         for ball in balls:
             ball.setElasticity(elasticity)
             ball.setMass(mass)
+            ball.setMaxForce(maxFrictionForce)
             if int(ball.body.velocity[0]) != 0 or int(ball.body.velocity[1]) != 0: #checking for ball speed, int is used in cases where the velocity is a really low value close to 0
                 isTakingShot = False
         
@@ -511,18 +512,19 @@ while isRunning:
         #if its classic mode, set the lives
         if freePlay == False:
             pygame.draw.rect(screen, BG, (0, SCREEN_HEIGHT, SCREEN_WIDTH, BOTTOM_PANEL))
-            drawText("LIVES: " + str(lives), largeFont, WHITE, SCREEN_WIDTH - 225, SCREEN_HEIGHT)
+            drawText("LIVES: " + str(lives), largeFont, WHITE, SCREEN_WIDTH - 225, SCREEN_HEIGHT + 20)
         
         #if its free play, no lives
         else:
             pygame.draw.rect(screen, BG, (0, SCREEN_HEIGHT, SCREEN_WIDTH, BOTTOM_PANEL))
+            drawText("Cue Ball Velocity: " + str(round(math.sqrt((balls[-1].body.velocity[0])**2 + (balls[-1].body.velocity[1])**2), 3)), font, WHITE, SCREEN_WIDTH - 300, SCREEN_HEIGHT + 20)
 
             #INPUT CAPTIONS
-            drawText("Max Force: " + str(forceMax), font, WHITE, 75, SCREEN_HEIGHT + 85)
-            drawText("Ball Diameter: " + str(diam), font, WHITE, 300, SCREEN_HEIGHT + 85)
-            drawText("Ball Mass: " + str(mass), font, WHITE, 525, SCREEN_HEIGHT + 85)
+            drawText("Max Force: " + str(forceMax) + " N", font, WHITE, 75, SCREEN_HEIGHT + 85)
+            drawText("Ball Diameter: " + str(diam) + " m", font, WHITE, 300, SCREEN_HEIGHT + 85)
+            drawText("Ball Mass: " + str(mass) + " kg", font, WHITE, 525, SCREEN_HEIGHT + 85)
             drawText("Ball Elasticity: " + str(elasticity), font, WHITE, 750, SCREEN_HEIGHT + 85)
-            drawText("Ball Friction: " + str(maxFrictionForce), font, WHITE, 975, SCREEN_HEIGHT + 85)
+            drawText("Ball Friction: " + str(maxFrictionForce) + " F/N", font, WHITE, 975, SCREEN_HEIGHT + 85)
 
             # CUE SELECTION
             if classicBtn.draw(screen) and not isBtnClicked:
@@ -606,7 +608,7 @@ while isRunning:
         
         #drawing the potted balls in the bottom section
         for i, ball in enumerate(pottedBalls):
-            screen.blit(ball, ((10 + (i * 50)), (SCREEN_HEIGHT + 10)))
+            screen.blit(ball, ((10 + (i * 50)), (SCREEN_HEIGHT + 20)))
 
         #checking for game over
         if lives <= 0:
@@ -643,6 +645,7 @@ while isRunning:
             isRunning = False
         for box in inputBoxes:
             box.handle_event(event, font, COLOR_ACTIVE, COLOR_INACTIVE)
+        
     
     pygame.display.update()
 

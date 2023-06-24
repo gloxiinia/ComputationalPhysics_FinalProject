@@ -7,6 +7,9 @@ import button
 
 from pygame import mixer
 from inputBox import InputBox
+
+#####################################################################################################################
+
 pygame.init()
 
 #SETTING SCREEN HEIGHT
@@ -54,6 +57,7 @@ forceDir = 1
 lives = 3
 cueBallX = 888
 cueBallY = SCREEN_HEIGHT/2
+pottedBalls = []
 
 #states
 intro = True
@@ -66,11 +70,6 @@ isGamePaused = False
 isGameRunning = True
 isBtnClicked = False
 menuState = "main"
-
-pottedBalls = []
-
-#user input variables
-userText = ""
 
 #colors
 BG = (27,64,121)
@@ -89,7 +88,6 @@ largeFont = pygame.font.Font("cuenetics/assets/BalsamiqSans-Regular.ttf",50)
 #####################################################################################################################
 # MUSIC SETUP
 playlist = list()
-
 playlist.append("cuenetics/assets/music/jazzyabstract.mp3")
 playlist.append("cuenetics/assets/music/weeknds.mp3")
 playlist.append("cuenetics/assets/music/bossanovacute.wav")
@@ -98,10 +96,6 @@ pygame.mixer.music.load ( playlist.pop() ) #get first track from the playlist
 pygame.mixer.music.queue ( playlist.pop() ) #queue second song
 pygame.mixer.music.set_endevent ( pygame.USEREVENT ) #setup end track event   
 pygame.mixer.music.play() 
-
-mixer.music.load("cuenetics/assets/music/bossanovacute.wav")
-mixer.music.play(-1)
-
 
 #####################################################################################################################
 #LOADING IMAGES
@@ -149,7 +143,6 @@ sharpImage = pygame.transform.smoothscale(sharpImage, (175, 50))
 pointyImage = pygame.image.load("cuenetics/assets/images/buttons/pointy_button.png").convert_alpha()
 pointyImage = pygame.transform.smoothscale(pointyImage, (175, 50))
 
-
 #POOL GAME
 tableImage = pygame.image.load("cuenetics/assets/images/poolgame/table.png").convert_alpha()
 tableImage = pygame.transform.smoothscale(tableImage, (1280, 720))
@@ -178,7 +171,7 @@ for i in range(1, 17):
 #####################################################################################################################
 #CLASSES AND FUNCTIONS
 
-#class for creating the cue
+#CUE CLASS
 #cue is only a visual cue, not a pymunk object
 class Cue():
     def __init__(self, pos, image):
@@ -201,7 +194,7 @@ class Cue():
                       self.rect.centery - self.image.get_height()/2
                       ))
 
-# class for creating a ball object    
+# BALL CLASS   
 class Ball():
     def __init__(self, pos, rad, mass, elasticity, maxFrictionForce):
         self.body = pymunk.Body()
@@ -315,7 +308,6 @@ for c in cushions:
     createCushion(c)
 
 #cue stick setup
-
 cueStick = Cue(balls[-1].body.position, cue1Image)
 
 #power bar setup and creation
